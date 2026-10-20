@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>My Tracker</title>
+<meta name="theme-color" content="#1f6f50">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Tracker">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f3f6f1;--surface:#ffffff;--ink:#17211b;--muted:#5d6b62;--line:#d5ddd5;--accent:#1f6f50;--accent-ink:#fff;--warn:#b3402a;--done:#cfe8da}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#111814;--surface:#1a241e;--ink:#e8efe9;--muted:#93a399;--line:#2b392f;--accent:#58c995;--accent-ink:#0b1a12;--warn:#ef8c75;--done:#24402f}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#111814;--surface:#1a241e;--ink:#e8efe9;--muted:#93a399;--line:#2b392f;--accent:#58c995;--accent-ink:#0b1a12;--warn:#ef8c75;--done:#24402f}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:560px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:2rem;font-weight:800;margin:8px 0 2px;letter-spacing:-.02em}
+.sub{color:var(--muted);margin:0 0 18px}
+.tabs{display:flex;gap:6px;background:var(--line);padding:4px;border-radius:12px;margin-bottom:18px}
+.tabs button{flex:1;border:0;background:none;color:var(--muted);font:inherit;font-weight:600;padding:10px;border-radius:9px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+form{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+input,select{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:11px 12px;min-width:0}
+input[type=text]{flex:1 1 140px}
+input[type=number]{flex:1 1 90px}
+.add{background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;font:inherit;font-weight:600;padding:11px 18px;cursor:pointer}
+.hab{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px}
+.hab .name{flex:1;font-weight:600}
+.streak{color:var(--muted);font-size:.85rem}
+.week{display:flex;gap:5px}
+.day{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--line);background:none;color:var(--muted);font:600 .72rem inherit;font-family:inherit;cursor:pointer;padding:0}
+.day.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.day.today{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--accent)}
+.del{border:0;background:none;color:var(--muted);cursor:pointer;font-size:1.2rem;padding:4px 8px}
+.hab-top{display:flex;align-items:center;width:100%}
+.hab{flex-direction:column;align-items:stretch;gap:8px}
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.summary div{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px}
+.summary small{color:var(--muted);display:block}
+.summary b{font-size:1.25rem}
+.pos{color:var(--accent)}.neg{color:var(--warn)}
+.tx{display:flex;justify-content:space-between;align-items:center;padding:11px 2px;border-bottom:1px solid var(--line)}
+.tx span small{color:var(--muted);display:block}
+.empty{color:var(--muted);text-align:center;padding:28px 8px;border:1.5px dashed var(--line);border-radius:14px}
+.scroll{overflow-x:auto}
+.goal{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px}
+.goal-top{display:flex;justify-content:space-between;align-items:center;font-weight:600}
+.bar{height:10px;background:var(--line);border-radius:6px;overflow:hidden;margin:10px 0}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:6px}
+.goal .row{display:flex;gap:8px}.goal .row input{flex:1}
+.backup{margin-top:28px;border-top:1px solid var(--line);padding-top:14px}
+.backup summary{cursor:pointer;font-weight:600}
+.backup textarea{width:100%;font:.8rem monospace;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px}
+.backup .row{display:flex;gap:8px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<main>
+  <h1>My Tracker</h1>
+  <p class="sub" id="date"></p>
+  <div class="tabs" role="tablist">
+    <button role="tab" id="t-habits" aria-selected="true">Habits</button>
+    <button role="tab" id="t-budget" aria-selected="false">Budget</button>
+    <button role="tab" id="t-goals" aria-selected="false">Goals</button>
+  </div>
+
+  <section id="habits">
+    <form id="hform">
+      <input type="text" id="hname" placeholder="New habit, like Walk 20 minutes" required maxlength="50" aria-label="Habit name">
+      <button class="add" type="submit">Add habit</button>
+    </form>
+    <p class="sub" id="hsum"></p><div id="hlist"></div>
+  </section>
+
+  <section id="budget" hidden>
+    <div class="summary">
+      <div><small>Money in</small><b class="pos" id="s-in">$0</b></div>
+      <div><small>Money out</small><b class="neg" id="s-out">$0</b></div>
+      <div><small>Left</small><b id="s-bal">$0</b></div>
+    </div>
+    <form id="bform">
+      <select id="btype" aria-label="Type"><option value="out">Spent</option><option value="in">Earned</option></select>
+      <select id="bcat" aria-label="Category"><option>Food</option><option>Transport</option><option>Fun</option><option>Bills</option><option>Savings</option><option>Other</option></select>
+      <input type="text" id="bnote" placeholder="What for?" required maxlength="40" aria-label="Description">
+      <input type="number" id="bamt" placeholder="Amount" min="0.01" step="0.01" required aria-label="Amount">
+      <button class="add" type="submit">Add entry</button>
+    </form>
+    <div id="bcats"></div>
+    <div id="blist"></div>
+  </section>
+
+  <section id="goals" hidden>
+    <form id="gform">
+      <input type="text" id="gname" placeholder="Goal, like Save for a bike" required maxlength="40" aria-label="Goal name">
+      <input type="number" id="gtarget" placeholder="Target $" min="1" step="1" required aria-label="Target amount">
+      <button class="add" type="submit">Add goal</button>
+    </form>
+    <div id="glist"></div>
+  </section>
+
+  <details class="backup">
+    <summary>Back up or move your data</summary>
+    <p class="sub">Your data lives in this browser only. Copy it to keep a backup, or paste a backup here to restore it on another device.</p>
+    <textarea id="bk" rows="4" aria-label="Backup text"></textarea>
+    <div class="row"><button class="add" id="bk-copy" type="button">Copy backup</button> <button class="add" id="bk-restore" type="button">Restore from text</button></div>
+    <p class="sub" id="bk-msg" aria-live="polite"></p>
+  </details>
+</main>
+
+<script>
+(function(){
+  var KEY="tracker-v1", state={habits:[],tx:[]};
+  try{var raw=localStorage.getItem(KEY); if(raw){var p=JSON.parse(raw); if(p&&p.habits&&p.tx) state=p;}}catch(e){}
+  if(!state.goals)state.goals=[];
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+  function iso(d){var m=d.getMonth()+1,day=d.getDate();return d.getFullYear()+"-"+(m<10?"0":"")+m+"-"+(day<10?"0":"")+day;}
+  function money(n){return (n<0?"-":"")+"$"+Math.abs(n).toFixed(2).replace(/\.00$/,"");}
+  function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+  var today=new Date();
+  document.getElementById("date").textContent=today.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
+
+  function streak(h){
+    var s=0,d=new Date();
+    if(!h.done[iso(d)]) d.setDate(d.getDate()-1);
+    while(h.done[iso(d)]){s++;d.setDate(d.getDate()-1);}
+    return s;
+  }
+  function esc(t){var e=document.createElement("div");e.textContent=t;return e.innerHTML;}
+
+  function renderHabits(){
+    var box=document.getElementById("hlist");
+    var nowK=iso(new Date()),doneN=state.habits.filter(function(h){return h.done[nowK];}).length;
+    document.getElementById("hsum").textContent=state.habits.length?(doneN===state.habits.length?"All "+doneN+" done today. Nice work.":doneN+" of "+state.habits.length+" done today"):"";
+    if(!state.habits.length){box.innerHTML='<div class="empty">No habits yet. Add one above, then tap a circle each day you do it.</div>';return;}
+    var days=[];for(var i=6;i>=0;i--){var d=new Date();d.setDate(d.getDate()-i);days.push(d);}
+    box.innerHTML=state.habits.map(function(h){
+      var s=streak(h);
+      var btns=days.map(function(d,i){
+        var k=iso(d);
+        return '<button class="day'+(h.done[k]?' on':'')+(i===6?' today':'')+'" data-id="'+h.id+'" data-day="'+k+'" aria-pressed="'+(!!h.done[k])+'" aria-label="'+d.toLocaleDateString(undefined,{weekday:"long"})+'">'+d.toLocaleDateString(undefined,{weekday:"narrow"})+'</button>';
+      }).join("");
+      return '<div class="hab"><div class="hab-top"><span class="name">'+esc(h.name)+'</span><span class="streak">'+s+' day streak</span><button class="del" data-del="'+h.id+'" aria-label="Delete habit">&times;</button></div><div class="week">'+btns+'</div></div>';
+    }).join("");
+  }
+  function renderBudget(){
+    var inn=0,out=0;
+    state.tx.forEach(function(t){if(t.type==="in")inn+=t.amt;else out+=t.amt;});
+    document.getElementById("s-in").textContent=money(inn);
+    document.getElementById("s-out").textContent=money(out);
+    var b=document.getElementById("s-bal");b.textContent=money(inn-out);b.className=(inn-out)<0?"neg":"pos";
+    var cats={},mx=0;
+    state.tx.forEach(function(t){if(t.type==="out"){var c=t.cat||"Other";cats[c]=(cats[c]||0)+t.amt;}});
+    var keys=Object.keys(cats).sort(function(a,b){return cats[b]-cats[a];});
+    if(keys.length)mx=cats[keys[0]];
+    document.getElementById("bcats").innerHTML=keys.length?'<div class="goal"><div class="goal-top">Where it went</div>'+keys.map(function(c){return '<div style="margin-top:10px"><div class="goal-top" style="font-weight:400"><span>'+esc(c)+'</span><span>'+money(cats[c])+'</span></div><div class="bar" style="margin:4px 0 0"><i style="width:'+Math.round(cats[c]/mx*100)+'%"></i></div></div>';}).join("")+'</div>':"";
+    var box=document.getElementById("blist");
+    if(!state.tx.length){box.innerHTML='<div class="empty">Nothing logged yet. Add what you earn and what you spend.</div>';return;}
+    box.innerHTML=state.tx.slice().reverse().map(function(t){
+      return '<div class="tx"><span>'+esc(t.note)+'<small>'+t.date+(t.cat&&t.type==="out"?", "+t.cat:"")+'</small></span><span><b class="'+(t.type==="in"?"pos":"neg")+'">'+(t.type==="in"?"+":"-")+money(t.amt)+'</b> <button class="del" data-tx="'+t.id+'" aria-label="Delete entry">&times;</button></span></div>';
+    }).join("");
+  }
+
+  document.getElementById("hform").addEventListener("submit",function(e){
+    e.preventDefault();var n=document.getElementById("hname");
+    state.habits.push({id:uid(),name:n.value.trim(),done:{}});n.value="";save();renderHabits();
+  });
+  document.getElementById("hlist").addEventListener("click",function(e){
+    var t=e.target;
+    if(t.dataset.day){var h=state.habits.filter(function(x){return x.id===t.dataset.id;})[0];
+      if(h.done[t.dataset.day])delete h.done[t.dataset.day];else h.done[t.dataset.day]=1;save();renderHabits();}
+    else if(t.dataset.del){state.habits=state.habits.filter(function(x){return x.id!==t.dataset.del;});save();renderHabits();}
+  });
+  document.getElementById("bform").addEventListener("submit",function(e){
+    e.preventDefault();
+    var amt=parseFloat(document.getElementById("bamt").value);
+    if(!(amt>0))return;
+    state.tx.push({id:uid(),type:document.getElementById("btype").value,cat:document.getElementById("bcat").value,note:document.getElementById("bnote").value.trim(),amt:amt,date:iso(new Date())});
+    document.getElementById("bnote").value="";document.getElementById("bamt").value="";save();renderBudget();
+  });
+  document.getElementById("blist").addEventListener("click",function(e){
+    var id=e.target.dataset.tx;if(id){state.tx=state.tx.filter(function(x){return x.id!==id;});save();renderBudget();}
+  });
+
+  function tab(which){
+    document.getElementById("habits").hidden=which!=="habits";
+    document.getElementById("budget").hidden=which!=="budget";
+    document.getElementById("goals").hidden=which!=="goals";
+    document.getElementById("t-goals").setAttribute("aria-selected",which==="goals");
+    document.getElementById("t-habits").setAttribute("aria-selected",which==="habits");
+    document.getElementById("t-budget").setAttribute("aria-selected",which==="budget");
+  }
+  document.getElementById("t-habits").onclick=function(){tab("habits");};
+  document.getElementById("t-budget").onclick=function(){tab("budget");};
+  document.getElementById("t-goals").onclick=function(){tab("goals");};
+
+  function renderGoals(){
+    var box=document.getElementById("glist");
+    if(!state.goals.length){box.innerHTML='<div class="empty">No goals yet. Set a target, then add money as you save toward it.</div>';return;}
+    box.innerHTML=state.goals.map(function(g){
+      var pct=Math.min(100,Math.round(g.saved/g.target*100));
+      return '<div class="goal"><div class="goal-top"><span>'+esc(g.name)+'</span><button class="del" data-gdel="'+g.id+'" aria-label="Delete goal">&times;</button></div><div class="bar" role="progressbar" aria-valuenow="'+pct+'" aria-valuemin="0" aria-valuemax="100"><i style="width:'+pct+'%"></i></div><div class="streak">'+money(g.saved)+' of '+money(g.target)+' ('+pct+'%)'+(pct>=100?' Goal reached!':'')+'</div><div class="row" style="margin-top:10px"><input type="number" min="0.01" step="0.01" placeholder="Amount saved" data-gin="'+g.id+'" aria-label="Amount to add"><button class="add" data-gadd="'+g.id+'">Add</button></div></div>';
+    }).join("");
+  }
+  document.getElementById("gform").addEventListener("submit",function(e){
+    e.preventDefault();var n=document.getElementById("gname"),t=document.getElementById("gtarget");
+    state.goals.push({id:uid(),name:n.value.trim(),target:parseFloat(t.value),saved:0});n.value="";t.value="";save();renderGoals();
+  });
+  document.getElementById("glist").addEventListener("click",function(e){
+    var t=e.target;
+    if(t.dataset.gdel){state.goals=state.goals.filter(function(x){return x.id!==t.dataset.gdel;});save();renderGoals();}
+    else if(t.dataset.gadd){
+      var inp=document.querySelector('[data-gin="'+t.dataset.gadd+'"]'),v=parseFloat(inp.value);
+      if(v>0){state.goals.forEach(function(g){if(g.id===t.dataset.gadd)g.saved+=v;});save();renderGoals();}
+    }
+  });
+
+  var bk=document.getElementById("bk"),msg=document.getElementById("bk-msg");
+  document.getElementById("bk-copy").onclick=function(){
+    bk.value=JSON.stringify(state);bk.select();
+    try{navigator.clipboard.writeText(bk.value).then(function(){msg.textContent="Copied. Paste it somewhere safe.";},function(){msg.textContent="Select the text above and copy it.";});}
+    catch(e){msg.textContent="Select the text above and copy it.";}
+  };
+  document.getElementById("bk-restore").onclick=function(){
+    try{var p=JSON.parse(bk.value);if(!p||!Array.isArray(p.habits)||!Array.isArray(p.tx))throw 0;
+      state=p;if(!state.goals)state.goals=[];save();renderHabits();renderBudget();renderGoals();msg.textContent="Restored.";}
+    catch(e){msg.textContent="That doesn't look like a backup. Paste the full text and try again.";}
+  };
+
+  document.getElementById("btype").addEventListener("change",function(){document.getElementById("bcat").hidden=this.value==="in";});
+  renderHabits();renderBudget();renderGoals();
+})();
+</script>
+</body>
+</html>
